@@ -1,0 +1,1 @@
+delete: s3://btingletestbucket/staging/.s3test

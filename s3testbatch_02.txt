@@ -1,0 +1,2 @@
+s3://btingletestbucket/input/H17P200-N-xaa.db2.tgz
+s3://btingletestbucket/input/H17P200-N-xab.db2.tgz
