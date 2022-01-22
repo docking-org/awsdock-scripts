@@ -4,6 +4,7 @@ AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq -r '.UserId')
 service_roles="autoscaling batch spot spotfleet ecs rds"
 for service in $service_roles; do
 	aws iam create-service-linked-role --aws-service-name $service.amazonaws.com
+done
 
 ecrjson="{\
 \"Version\": \"2012-10-17\",

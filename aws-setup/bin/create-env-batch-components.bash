@@ -61,7 +61,7 @@ function circular_numerical_prompt {
 # todo: docs...
 [ -z $BID_PERCENTAGE ] && BID_PERCENTAGE=$(circular_numerical_prompt "What is your bid percentage threshold for spot instances? Consult the docs for more info on this parameter. [default: 100]: " 100)
 
-compute_env_arn=$(aws batch describe-compute-environments | jq ".computeEnvironments[] | select(.computeEnvironmentName==\"$env_suffix-CE\") | .computeEnvironmentArn")
+compute_env_arn=$(aws batch describe-compute-environments | jq -r ".computeEnvironments[] | select(.computeEnvironmentName==\"$env_suffix-CE\") | .computeEnvironmentArn")
 
 if [ -z "$compute_env_arn" ]; then
 
@@ -86,26 +86,38 @@ instanceRole="arn:aws:iam::$AWS_ACCOUNT_ID:instance-profile/$ECS_INSTANCE_ROLE_N
 spotIamFleetRole="arn:aws:iam::$AWS_ACCOUNT_ID:role/AmazonEC2SpotFleetTaggingRole",\
 subnets=$(echo $subnets | tr ' ' ','),\
 bidPercentage=$BID_PERCENTAGE,\
-securityGroupIds=$securitygroup | jq '.computeEnvironmentArn')
+securityGroupIds=$securitygroup | jq -r '.computeEnvironmentArn')
 
+else
+	log "compute env already exists from previous run!" warning
 fi
 
-echo $compute_env_arn
+log $compute_env_arn debug
 
 # Queue
-aws batch create-job-queue \
+fail=
+res=$(aws batch create-job-queue \
 	--state ENABLED \
 	--job-queue-name "${env_suffix}-Queue" \
 	--priority=100 \
 	--compute-environment-order \
-		order=1,computeEnvironment="$compute_env_arn"
+		order=1,computeEnvironment="$compute_env_arn" 2>&1) || fail=t
+
+if ! [ -z $fail ]; then
+	if [[ "$res" == *"Object already exists"* ]]; then
+		log "job queue exists from previous run!" warning 1>&2
+	else
+		log "$res" error 1>&2
+		exit 1
+	fi
+fi
 
 # Job definition
 jobdef_json=$(printf "$JOB_JSON_CONFIG_DEFAULT" | sed "s/____ECS_IMAGE_ARN____/$AWS_ACCOUNT_ID.dkr.ecr.$aws_region.amazonaws.com\/$image_name/g")
 
 ! [ -z "$RETRY_STRATEGY" ] && RETRY_STRATEGY_ARG="--retry-strategy $RETRY_STRATEGY" || RETRY_STRATEGY_ARG=
 aws batch register-job-definition \
-	--job-definition-name "$SETUP_TYPE-$env_suffix" \
+	--job-definition-name "$env_suffix-jobdef" \
 	--type container \
-	"$RETRY_STRATEGY_ARG" \
-	--container-properties $jobdef_json_default
+	$RETRY_STRATEGY_ARG \
+	--container-properties "$JOB_JSON_CONFIG"

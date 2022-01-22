@@ -37,34 +37,37 @@ set -e # exit on any error code
 source $config
 
 if [ -z "$JOB_JSON_CONFIG" ]; then
-	echo "Please specify JOB_JSON_CONFIG in your configuration, this value is required."
+	log "Please specify JOB_JSON_CONFIG in your configuration, this value is required." error
 	exit 1
 fi
 
-echo "test"
+aws configure set output json 1>/dev/null 2>&1
+AWS_REGION=$(aws configure get region) || (AWS_REGION=us-west-1 && old_region=)
 
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq -r '.UserId' 2>/dev/null) || (echo "You must provide your aws account credentials! Try running 'aws configure'" && exit 1)
 AWS_ACCOUNT_ARN=$(aws sts get-caller-identity | jq -r '.Arn' 2>/dev/null) || (echo "You must provide your aws account credentials! Try running 'aws configure'" && exit 1)
 
 # initialize environment name
-echo "Welcome to the $CONFIG_NAME environment setup script!"
-prompt_or_override "What would you like this environment to be called? [default: \"${ENV_NAME_DEFAULT-None}\"]: " env_suffix ENV_NAME ENV_NAME_DEFAULT || printf ""
+log "{0} Welcome to the $CONFIG_NAME environment setup script!" info
+prompt_or_override "What would you like this environment to be called? [default: \"${ENV_NAME_DEFAULT-None}\"]: " env_suffix ENV_NAME $ENV_NAME_DEFAULT || printf ""
 
 # set environment region
-export AWS_REGION
+export AWS_REGION=$ENV_AWS_REGION
 aws_region=$(bash $BINDIR/set-aws-region.bash)
+export AWS_REGION=$aws_region
 
 # set environment full name (base name + region)
 env_suffix=$env_suffix-$aws_region
-echo "Your environment's full name is $env_suffix"
+log "Your environment's full name is $env_suffix" info
 
 # instance profile creation
 export ECS_INSTANCE_ROLE_NAME=ecsInstanceRole-$env_suffix
 export AWS_ACCOUNT_ID
+log "{1} Creating instance role for env" info
 bash $BINDIR/create-env-instance-profile.bash
 
 # bucket config(s) creation
-echo "The following steps create policies allowing jobs to use s3 bucket(s) for input/output."
+log "{2} The following steps create policies allowing jobs to use s3 bucket(s) for input/output." info
 ENV_BUCKET_CONFIGS=${ENV_BUCKET_CONFIGS-prompt+}
 for bucket_config in $ENV_BUCKET_CONFIGS; do
 	if [ "$bucket_config" = "prompt+" ]; then
@@ -79,16 +82,23 @@ for bucket_config in $ENV_BUCKET_CONFIGS; do
 	else
 		bucket=$(echo "$bucket_config" | cut -d':' -f1)
 		io_types=$(echo "$bucket_config" | cut -d':' -f2)
-		bash $BINDIR/create-s3-bucket-policies.bash $env_suffix $aws_region $bucket $io_types
+		bash $BINDIR/create-s3-bucket-policies.bash $env_suffix $aws_region $io_types $bucket
 	fi
 
 done
 
 # docker image upload
-image_name=$(bash upload-docker-ecr.bash $env_suffix $aws_region)
+export JOB_IMAGE
+export JOB_IMAGE_DEFAULT
+log "{3} Creating ECR repository from docker image" info
+image_name=$(bash $BINDIR/upload-docker-ecr.bash $env_suffix $aws_region)
 
 # compute environment, queue, job definition creation
 export RETRY_STRATEGY
 export MAX_CPUS
 export BID_PERCENTAGE
-bash create-env-batch-components.bash $env_suffix $aws_region $image_name
+export JOB_JSON_CONFIG
+log "{4} Finalizing AWS batch components" info
+bash $BINDIR/create-env-batch-components.bash $env_suffix $aws_region $image_name
+
+log "All done!" info
