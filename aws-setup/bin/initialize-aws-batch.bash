@@ -6,25 +6,9 @@ for service in $service_roles; do
 	aws iam create-service-linked-role --aws-service-name $service.amazonaws.com
 done
 
-ecrjson="{\
-\"Version\": \"2012-10-17\",
-\"Statement\": [
-{
-\"Effect\": \"Allow\",
-\"Action\": [
-\"ecr:BatchCheckLayerAvailability\",
-\"ecr:BatchGetImage\",
-\"ecr:GetDownloadUrlForLayer\",
-\"ecr:GetAuthorizationToken\"
-],
-\"Resource\": [\"*\"]
-}
-]
-}"
-
 aws iam create-policy \
 	--policy-name ecrPolicy \
-	--policy-document $ecrjson
+	--policy-document '{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Action": ["ecr:BatchCheckLayerAvailability","ecr:BatchGetImage","ecr:GetDownloadUrlForLayer","ecr:GetAuthorizationToken"],"Resource": ["*"]}]}'
 ## custom policies later...
 
 # Spot Fleet
@@ -44,4 +28,4 @@ aws iam create-role \
 
 aws iam attach-role-policy \
 	--role-name AWSBatchServiceRole	\
-	--policy-arn arn:aws:iam::986751094573:role/service-role/AWSBatchServiceRole
+	--policy-arn arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
