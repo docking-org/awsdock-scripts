@@ -7,7 +7,10 @@ set -e
 
 env_suffix=$1
 aws_region=$2
-image_name=$3
+
+# ECS image creation
+image_base_name=$(basename $JOB_IMAGE | cut -d':' -f1)
+image_name=$(echo $image_base_name-$env_suffix | tr '[:upper:]' '[:lower:]')
 
 export AWS_REGION
 [ -z $aws_region ] && aws_region=$(bash $BINDIR/set-aws-region.bash) || printf ""

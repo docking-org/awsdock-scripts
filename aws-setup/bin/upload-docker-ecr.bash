@@ -43,4 +43,4 @@ docker push $ECS_IMAGE_ARN 1>&2 || (log "failed @ docker push" error && fail=t)
 [ -z $fail ]
 
 log "IMAGE NAME: $image_name" info
-echo $image_name
+#echo $image_name

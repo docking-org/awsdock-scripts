@@ -36,7 +36,7 @@ TEMPDIR=${TEMPDIR-/tmp}
 configuration=$1
 ! [ -z $configuration ] && source $configuration
 
-prompt_or_override "[ What is the full name of the environment to submit to? ]: " env_name env_name
+prompt_or_override "[ What is the full name (\$name-\$region) of the environment to submit to? ]: " env_name env_name
 job_queue_name=$env_name-Queue
 job_def_name=$env_name-jobdef
 log "environment name: $env_name, job_queue: $job_queue_name, job_def: $job_def_name" info
@@ -83,9 +83,20 @@ while [ -z ]; do
 done
 
 timestamp=$(date +%s)
-prompt_or_override "[ Provide an s3 file location for the list of files to be evaluated by this run ]: " s3_infiles s3_infiles
-
-aws s3 cp $s3_infiles $TEMPDIR/jobsub_dock_input.$timestamp
+while [ -z ]; do
+    interactive=t
+    prompt_or_override "[ Provide an s3 file location for the list of files to be evaluated by this run ]: " s3_infiles s3_infiles && interactive=
+    aws s3 cp $s3_infiles $TEMPDIR/jobsub_dock_input.$timestamp
+    t=$?
+    if [ $t -ne 0 ]; then
+        log "couldn't find list of files!" error
+        if [ -z $interactive ]; then
+            exit 1
+        fi
+        continue
+    fi
+    break
+done
 
 log "splitting input @ $TEMPDIR/jobsub_dock_split_input.$timestamp" info
 mkdir $TEMPDIR/jobsub_dock_split_input.$timestamp
