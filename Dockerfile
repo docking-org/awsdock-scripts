@@ -14,8 +14,10 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/aws
 RUN unzip "/tmp/awscliv2.zip"
 RUN /tmp/aws/install
 
-ADD *.bash aws-setup/
-ADD *.config aws-setup/
-COPY ../../awsdock awsdock
+RUN mkdir /home/awsuser
+WORKDIR /home/awsuser
+
+COPY aws-setup/bin/* /home/awsuser/aws-setup/
+COPY awsdock /home/awsuser/awsdock/
 
 CMD ["bash"]

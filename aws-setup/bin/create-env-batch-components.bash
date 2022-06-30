@@ -113,7 +113,7 @@ if ! [ -z $fail ]; then
 fi
 
 # Job definition
-jobdef_json=$(printf "$JOB_JSON_CONFIG_DEFAULT" | sed "s/____ECS_IMAGE_ARN____/$AWS_ACCOUNT_ID.dkr.ecr.$aws_region.amazonaws.com\/$image_name/g")
+jobdef_json=$(printf "$JOB_JSON_CONFIG" | sed "s/____ECS_IMAGE_ARN____/$AWS_ACCOUNT_ID.dkr.ecr.$aws_region.amazonaws.com\/$image_name/g")
 
 ! [ -z "$RETRY_STRATEGY" ] && RETRY_STRATEGY_ARG="--retry-strategy $RETRY_STRATEGY" || RETRY_STRATEGY_ARG=
 aws batch register-job-definition \
