@@ -25,7 +25,7 @@ function log {
 	__LOG_FLAGS=${__LOG_FLAGS-"info error warning"}
 
 	if [[ "$__LOG_FLAGS" == *"$flg"* ]]; then
-		printf "[$(date)][$flg]: $msg\n"
+		printf "[$(date)][$flg]: $msg\n" 1>&2
 	fi
 }
 
