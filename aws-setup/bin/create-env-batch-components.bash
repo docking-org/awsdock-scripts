@@ -88,6 +88,8 @@ subnets=$(echo $subnets | tr ' ' ','),\
 bidPercentage=$BID_PERCENTAGE,\
 securityGroupIds=$securitygroup | jq -r '.computeEnvironmentArn')
 
+	sleep 5
+
 else
 	log "compute env already exists from previous run!" warning
 fi
@@ -115,9 +117,12 @@ fi
 # Job definition
 jobdef_json=$(printf "$JOB_JSON_CONFIG" | sed "s/____ECS_IMAGE_ARN____/$AWS_ACCOUNT_ID.dkr.ecr.$aws_region.amazonaws.com\/$image_name/g")
 
+echo "$JOB_JSON_CONFIG"
+echo "$jobdef_json"
+
 ! [ -z "$RETRY_STRATEGY" ] && RETRY_STRATEGY_ARG="--retry-strategy $RETRY_STRATEGY" || RETRY_STRATEGY_ARG=
 aws batch register-job-definition \
 	--job-definition-name "$env_suffix-jobdef" \
 	--type container \
 	$RETRY_STRATEGY_ARG \
-	--container-properties "$JOB_JSON_CONFIG"
+	--container-properties "$jobdef_json"

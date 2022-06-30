@@ -13,11 +13,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ="America/New_York"\
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
 RUN unzip "/tmp/awscliv2.zip"
 RUN /tmp/aws/install
-
 RUN mkdir /home/awsuser
-WORKDIR /home/awsuser
 
 COPY aws-setup/bin/* /home/awsuser/aws-setup/
-COPY awsdock /home/awsuser/awsdock/
+COPY awsdock /home/awsuser/awsdock
 
+WORKDIR /home/awsuser
 CMD ["bash"]
