@@ -6,7 +6,7 @@ WORKDIR /tmp
 
 # one liner to install docker
 # also include aws cli dependencies (as well as vim, so people can use a text editor within the image)
-RUN apt-get update && \
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get update && \
     apt-get install -qy curl lxc iptables jq unzip less groff vim unzip && \
     curl -sSL https://get.docker.com/ | sh
 
