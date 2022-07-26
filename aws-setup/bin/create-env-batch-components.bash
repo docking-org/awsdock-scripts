@@ -64,6 +64,13 @@ function circular_numerical_prompt {
 # todo: docs...
 [ -z $BID_PERCENTAGE ] && BID_PERCENTAGE=$(circular_numerical_prompt "What is your bid percentage threshold for spot instances? Consult the docs for more info on this parameter. [default: 100]: " 100)
 
+launchTemplateData=$(aws ec2 create-launch-template \
+	--launch-template-name $env_suffix-LT-EBS \
+	--launch-template-data '{"BlockDeviceMappings":[{"DeviceName":"/dev/xvdcz", "Ebs":{"VolumeSize":20, "VolumeType":"gp2"}}]}' | jq -r '.LaunchTemplate.LaunchTemplateId + "____" + .LaunchTemplate.LaunchTemplateName')
+
+launchTemplateId=$(echo $launchTemplateData | sed 's/____/ /g' | awk '{print $1}')
+launchTemplateName=$(echo $launchTemplateData | sed 's/____/ /g' | awk '{print $1}')
+
 compute_env_arn=$(aws batch describe-compute-environments | jq -r ".computeEnvironments[] | select(.computeEnvironmentName==\"$env_suffix-CE\") | .computeEnvironmentArn")
 
 if [ -z "$compute_env_arn" ]; then
@@ -83,18 +90,39 @@ if [ -z "$compute_env_arn" ]; then
 type="SPOT",\
 minvCpus=0,\
 maxvCpus=$MAX_CPUS,\
+allocationStrategy=SPOT_CAPACITY_OPTIMIZED,\
 desiredvCpus=0,\
 instanceTypes="optimal",\
 instanceRole="arn:aws:iam::$AWS_ACCOUNT_ID:instance-profile/$ECS_INSTANCE_ROLE_NAME",\
 spotIamFleetRole="arn:aws:iam::$AWS_ACCOUNT_ID:role/AmazonEC2SpotFleetTaggingRole",\
 subnets=$(echo $subnets | tr ' ' ','),\
 bidPercentage=$BID_PERCENTAGE,\
-securityGroupIds=$securitygroup | jq -r '.computeEnvironmentArn')
+securityGroupIds=$securitygroup\
+launchTemplate="launchTemplateId=$launchTemplateId,launchTemplateName=$launchTemplateName" | jq -r '.computeEnvironmentArn')
 
 	sleep 5
 
 else
-	log "compute env already exists from previous run!" warning
+	log "compute env already exists from previous run, choosing to update it!" warning
+
+	compute_env_arn=$(aws batch update-compute-environment \
+		--compute-environment "$compute_env_arn" \
+		--state ENABLED \
+		--compute-resources \
+type="SPOT",\
+minvCpus=0,\
+maxvCpus=$MAX_CPUS,\
+allocationStrategy=SPOT_CAPACITY_OPTIMIZED,\
+desiredvCpus=0,\
+instanceTypes="optimal",\
+instanceRole="arn:aws:iam::$AWS_ACCOUNT_ID:instance-profile/$ECS_INSTANCE_ROLE_NAME",\
+spotIamFleetRole="arn:aws:iam::$AWS_ACCOUNT_ID:role/AmazonEC2SpotFleetTaggingRole",\
+subnets=$(echo $subnets | tr ' ' ','),\
+bidPercentage=$BID_PERCENTAGE,\
+securityGroupIds=$securitygroup\
+launchTemplate="launchTemplateId=$launchTemplateId,launchTemplateName=$launchTemplateName" | jq -r '.computeEnvironmentArn')
+
+	sleep 5
 fi
 
 log $compute_env_arn debug

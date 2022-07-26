@@ -116,6 +116,9 @@ if [ "$confirm" = "y" ]; then
         # outdated bit of configuration from when we hadn't nailed down the system as much
         # including it just so things don't break
         additional_env={name=NO_ACCESS_KEY,value=T},
+        if ! [ -z $S3_DOCKEXEC_LOCATION ]; then
+            additional_env=${additional_env}{name=S3_DOCKEXEC_LOCATION,value=$S3_DOCKEXEC_LOCATION},
+        fi
 
         aws batch submit-job \
             --job-name ${batch_name}_$(basename $j) \
