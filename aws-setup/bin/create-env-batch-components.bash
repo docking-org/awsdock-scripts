@@ -66,10 +66,10 @@ function circular_numerical_prompt {
 
 launchTemplateData=$(aws ec2 create-launch-template \
 	--launch-template-name $env_suffix-LT-EBS \
-	--launch-template-data '{"BlockDeviceMappings":[{"DeviceName":"/dev/xvdcz", "Ebs":{"VolumeSize":20, "VolumeType":"gp2"}}]}' | jq -r '.LaunchTemplate.LaunchTemplateId + "____" + .LaunchTemplate.LaunchTemplateName')
+	--launch-template-data '{"BlockDeviceMappings":[{"DeviceName":"/dev/xvdcz", "Ebs":{"VolumeSize":30, "VolumeType":"gp2"}}]}' | jq -r '.LaunchTemplate.LaunchTemplateId + "____" + .LaunchTemplate.LaunchTemplateName')
 
 launchTemplateId=$(echo $launchTemplateData | sed 's/____/ /g' | awk '{print $1}')
-launchTemplateName=$(echo $launchTemplateData | sed 's/____/ /g' | awk '{print $1}')
+launchTemplateName=$(echo $launchTemplateData | sed 's/____/ /g' | awk '{print $2}')
 
 compute_env_arn=$(aws batch describe-compute-environments | jq -r ".computeEnvironments[] | select(.computeEnvironmentName==\"$env_suffix-CE\") | .computeEnvironmentArn")
 

@@ -1,3 +1,4 @@
+# subnets are not made environment specific, it would be too much of a hassle. Instead just create subnets for the region and use them across all environments
 set -e
 
 region=$1

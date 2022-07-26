@@ -49,7 +49,7 @@ while [ -z ]; do
 
 	io_types_identifier=$(printf $io_types | tr ',' '-')
 
-	S3_POLICY=s3Policy-$io_types_identifier-$env_suffix
+	S3_POLICY=s3Policy-$bucket-$io_types_identifier-$env_suffix
 	S3_POLICY_NODASH=$(printf $S3_POLICY | sed 's/-//g')
 
 	s3iojson="{\"Version\":\"2012-10-17\",\"Id\":\"$S3_POLICY_NODASH\",\"Statement\":[{\"Sid\":\"${S3_POLICY_NODASH}statement\",\"Effect\":\"Allow\",\"Action\":["
