@@ -6,7 +6,7 @@ WORKDIR /tmp
 
 # one liner to install docker
 # also include aws cli dependencies (as well as vim, so people can use a text editor within the image)
-RUN apt-get update && \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ="America/New_York"\
     apt-get install -qy curl lxc iptables jq unzip less groff vim unzip && \
     curl -sSL https://get.docker.com/ | sh
 
@@ -16,5 +16,6 @@ RUN /tmp/aws/install
 
 ADD *.bash aws-setup/
 ADD *.config aws-setup/
+COPY ../../awsdock awsdock
 
 CMD ["bash"]
