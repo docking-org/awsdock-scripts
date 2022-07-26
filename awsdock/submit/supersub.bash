@@ -45,7 +45,7 @@ while [ -z ]; do
     interactive=t
     prompt_or_override "[ Which s3 location should output be sent to? ]: " writable_s3 writable_s3 && interactive=
     echo > $TEMPDIR/.s3test
-    aws s3 cp $TEMPDIR/.s3test $s3_output/.s3test > /dev/null 2>&1
+    aws s3 cp $TEMPDIR/.s3test $writable_s3/.s3test > /dev/null 2>&1
     t=$?
     if [ $t -ne 0 ]; then
         log "s3 location does not exist or is not writable!" error
@@ -81,6 +81,11 @@ while [ -z ]; do
     break
 
 done
+
+timestamp=$(date +%s)
+prompt_or_override "[ Provide an s3 file location for the list of files to be evaluated by this run ]: " s3_infiles s3_infiles
+
+aws s3 cp $s3_infiles $TEMPDIR/jobsub_dock_input.$timestamp
 
 log "splitting input @ $TEMPDIR/jobsub_dock_split_input.$timestamp" info
 mkdir $TEMPDIR/jobsub_dock_split_input.$timestamp

@@ -1,7 +1,7 @@
 # if docker daemon is running on the same machine this script is running from
 if [ -e /var/run/docker.sock ]; then
 
-	docker run -v /var/run/docker.sock:/var/run/docker.sock -it btingle/awsdock-setup
+	docker run -v /var/run/docker.sock:/var/run/docker.sock -it btingle/aws-setup
 
 # if docker daemon is running on a different machine than the one this script is being executed on (e.g WSL)
 elif ! [ -z "$DOCKER_HOST" ]; then
@@ -15,7 +15,7 @@ elif ! [ -z "$DOCKER_HOST" ]; then
 	fi
 
 	# essentially we are just forwarding the DOCKER_HOST information to the container (making sure to use host.docker.internal if DOCKER_HOST is localhost)
-	docker run --env DOCKER_HOST=$prot//$host:$port -it btingle/awsdock-setup
+	docker run --env DOCKER_HOST=$prot//$host:$port -it btingle/aws-setup:testing
 
 else
 
