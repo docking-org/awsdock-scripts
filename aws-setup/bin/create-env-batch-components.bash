@@ -60,7 +60,14 @@ function circular_numerical_prompt {
 	echo $number
 }
 
-[ -z $MAX_CPUS ] && MAX_CPUS=$(circular_numerical_prompt "How many CPUS would you like to allocate to this environment at maximum? [default: None]: " "")
+SUGGESTED_MAX=$(aws service-quotas list-service-quotas --service-code ec2 | jq -r '.Quotas[] | select(.UsageMetric.MetricDimensions.Class == "Standard/Spot") | .Value')
+
+[ -z $MAX_CPUS ] && MAX_CPUS=$(circular_numerical_prompt "How many CPUS would you like to allocate to this environment at maximum? [suggested: $SUGGESTED_MAX]: " "$SUGGESTED_MAX")
+
+if [ $MAX_CPUS -gt $SUGGESTED_MAX ]; then
+	log "Max CPUs value greater than your account quota for spot CPUs!" warning
+fi
+
 # todo: docs...
 [ -z $BID_PERCENTAGE ] && BID_PERCENTAGE=$(circular_numerical_prompt "What is your bid percentage threshold for spot instances? Consult the docs for more info on this parameter. [default: 100]: " 100)
 
