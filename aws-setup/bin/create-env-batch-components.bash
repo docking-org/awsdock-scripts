@@ -34,11 +34,15 @@ function circular_numerical_prompt {
 		fi
 		re='^[0-9]+$'
 		if ! [[ $number =~ $re ]] ; then
+			[ -e /tmp/.rememberthis ] && (exasperated=true && rm /tmp/.rememberthis) || exasperated=
 			if [ $attempts -eq 0 ]; then
-				echo "Please enter a number using only digits 0-9." 1>&2
+				! [ -z $exasperated ] && echo "Please enter a number using only digits 0-9. Please." 1>&2
+				[ -z $exasperated ]   && echo "Please enter a number using only digits 0-9." 1>&2
 			elif [ $attempts -eq 1 ]; then
-				echo "Please enter a number. It's because of people like you that programmers have sleepless nights." 1>&2
+				! [ -z $exasperated ] && echo "Really? This again?"
+				[ -z $exasperated ]   && echo "Please enter a number. It's because of people like you that programmers have sleepless nights." 1>&2
 			elif [ $attempts -eq 2 ]; then
+				! [ -z $exasperated ] && echo "Come back when you're ready to be serious." && exit 1
 				echo "Do you get a kick out of this or something? Enter a number!" 1>&2
 			elif [ $attempts -eq 3 ]; then
 				echo "You're begging for trouble now. Stop it." 1>&2
@@ -46,6 +50,7 @@ function circular_numerical_prompt {
 				echo "Last warning..." 1>&2
 			elif [ $attempts -eq 5 ]; then
 				echo "Fine. Your number is now \"$number\". Let's see how that pans out!" 1>&2
+				echo "." > /tmp/.rememberthis
 				echo $number
 				return
 			fi
