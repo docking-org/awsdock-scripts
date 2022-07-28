@@ -11,16 +11,16 @@ io_types_default=$3
 bucket_default=$4
 
 export AWS_REGION
-[ -z $aws_region ] && aws_region=$(bash $BINDIR/set-aws-region.bash) || printf ""
-prompt_or_override "What is the base name for the environment to upload to? [default: None]: " env_suffix env_suffix || printf ""
-[ -z $AWS_ACCOUNT_ID ] && AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq -r '.UserId') || printf ""
+[ -z $aws_region ] && aws_region=$(bash $BINDIR/set-aws-region.bash) || true
+prompt_or_override "What is the base name for the environment to upload to? [default: None]: " env_suffix env_suffix || true
+[ -z $AWS_ACCOUNT_ID ] && AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq -r '.UserId') || true
 
 while [ -z ]; do
 	DEFAULT_USED=
 	FAIL=
 
-	prompt_or_override "What bucket would you like to attach to this environment? " "bucket" "bucket_default" && DEFAULT_USED=TRUE || printf ""
-	prompt_or_override "Which action(s) would you like to perform on this bucket? Choose from input/output, if using multiple separate by commas. " "io_types" "io_types_default" && DEFAULT_USED=TRUE || printf ""
+	prompt_or_override "What bucket would you like to attach to this environment? " "bucket" "bucket_default" && DEFAULT_USED=TRUE || true
+	prompt_or_override "Which action(s) would you like to perform on this bucket? Choose from input/output, if using multiple separate by commas. " "io_types" "io_types_default" && DEFAULT_USED=TRUE || true
 
 	log $bucket debug
 	res=0
@@ -98,23 +98,18 @@ fi
 
 log "bucket:$bucket, io_types:$io_types" info
 
-err=
-res=$(aws iam create-policy \
+cmd="aws iam create-policy \
 	--policy-name $S3_POLICY \
-	--policy-document $s3iojson 2>&1) || err=t
+	--policy-document $s3iojson"
 
-if ! [ -z $err ]; then
-	fail=
-	if [ -z $(check_aws_error "$res" EntityAlreadyExists) ]; then
+case $(aws_cmd_handler "$cmd" EntityAlreadyExists) in
+	EntityAlreadyExists)
 		log "policy already exists from previous run!" warning
-	else
-		fail=t
-	fi
-	if ! [ -z $fail ]; then
-		log "$res" error
+	;;
+	ERROR)
 		exit 1
-	fi
-fi
+	;;
+esac
 
 aws iam attach-role-policy \
 	--role-name $ECS_INSTANCE_ROLE_NAME \

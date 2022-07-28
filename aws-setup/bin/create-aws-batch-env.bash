@@ -42,14 +42,17 @@ if [ -z "$JOB_JSON_CONFIG" ]; then
 fi
 
 aws configure set output json 1>/dev/null 2>&1
-AWS_REGION=$(aws configure get region) || (AWS_REGION=us-west-1 && old_region=)
+AWS_REGION=$(aws configure get region) || true
+if [ -z $AWS_REGION ]; then
+	AWS_REGION=us-west-1
+fi
 
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq -r '.UserId' 2>/dev/null) || (echo "You must provide your aws account credentials! Try running 'aws configure'" && exit 1)
 AWS_ACCOUNT_ARN=$(aws sts get-caller-identity | jq -r '.Arn' 2>/dev/null) || (echo "You must provide your aws account credentials! Try running 'aws configure'" && exit 1)
 
 # initialize environment name
 log "{0} Welcome to the $CONFIG_NAME environment setup script!" info
-prompt_or_override "What would you like this environment to be called? [default: \"${ENV_NAME_DEFAULT-None}\"]: " env_suffix ENV_NAME $ENV_NAME_DEFAULT || printf ""
+prompt_or_override "What would you like this environment to be called? [default: \"${ENV_NAME_DEFAULT-None}\"]: " env_suffix ENV_NAME $ENV_NAME_DEFAULT || true
 
 # set environment region
 export AWS_REGION=$ENV_AWS_REGION
@@ -82,6 +85,9 @@ for bucket_config in $ENV_BUCKET_CONFIGS; do
 	else
 		bucket=$(echo "$bucket_config" | cut -d':' -f1)
 		io_types=$(echo "$bucket_config" | cut -d':' -f2)
+		if [ "$bucket" = "prompt" ]; then
+			bucket=
+		fi
 		bash $BINDIR/create-s3-bucket-policies.bash $env_suffix $aws_region $io_types $bucket
 	fi
 

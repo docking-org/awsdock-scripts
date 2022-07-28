@@ -8,8 +8,8 @@ set -e
 
 while [ -z ]; do
 	# set environment region
-	curr_region=$(aws configure get region) || curr_region=
-	prompt_or_override "Which region is this environment based in? [default: $curr_region]: " aws_region AWS_REGION $curr_region && OVERRIDE=TRUE || printf ""
+	curr_region=$(aws configure get region) || true
+	prompt_or_override "Which region is this environment based in? [default: $curr_region]: " aws_region AWS_REGION $curr_region && OVERRIDE=TRUE || true
 	[ -z $AWS_REGION ] && AWS_REGION=us-west-1
 	#echo "test2" "a"$aws_region "b"$curr_region "c"$AWS_REGION 1>&2
 	okay=false
@@ -28,6 +28,6 @@ while [ -z ]; do
 	fi
 	#echo "test4" 1>&2
 	echo $aws_region
-	[ "$curr_region" != "$aws_region" ] && aws configure set region $aws_region || printf ""
+	[ "$curr_region" != "$aws_region" ] && aws configure set region $aws_region || true
 	exit 0
 done

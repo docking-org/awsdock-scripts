@@ -33,7 +33,38 @@ function check_aws_error {
 	res=$1
 	type=$2
 	if [[ "$res" == *"$type"* ]]; then
-		exit 0
+		echo 0
+		return
 	fi
-	exit 1
+	echo 1
+	return
+}
+
+# takes an AWS command and multiple error classes
+# the AWS command is run, and its output is grepped for the different error classes
+# if no error is detected return nothing and exit with code 0
+# if a given error is detected return its name and exit with code 0
+# otherwise print the entire error and exit with code 1
+function aws_cmd_handler {
+	cmd=$1
+	warning_classes=${@:2}
+
+	err=
+	res=$($cmd 2>&1) || err=t
+
+	if ! [ -z $err ]; then
+		for class in $warning_classes; do
+			if [ $(check_aws_error "$res" $class) -eq 0 ]; then
+				echo $class
+				return 0
+			fi
+		done
+		log "$res" error
+		echo ERROR
+		return 1
+	fi
+
+	[ -z $VERBOSE ] || log "$res" info
+	echo OK
+	return 0
 }

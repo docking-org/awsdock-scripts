@@ -3,25 +3,17 @@ BINDIR=${BINDIR-.}
 export BINDIR
 source $BINDIR/common.bash
 
-set -e
-
-# ecsInstanceRole    
-err=
-res=$(aws iam create-role \
-	--assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Sid":"","Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}' \
-	--role-name $ECS_INSTANCE_ROLE_NAME 2>&1) || err=t
-
-if ! [ -z $err ]; then
-	fail=
-	if [ -z $(check_aws_error "$res" EntityAlreadyExists) ]; then
+# ecsInstanceRole
+echo '{"Version":"2012-10-17","Statement":[{"Sid":"","Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}' > /tmp/instancerole_policy.json
+cmd="aws iam create-role --assume-role-policy-document file:///tmp/instancerole_policy.json --role-name $ECS_INSTANCE_ROLE_NAME"
+case $(aws_cmd_handler "$cmd" EntityAlreadyExists) in
+	EntityAlreadyExists)
 		log "role already exists from previous run!" warning
-	else
-		fail=t
-	fi
-	if ! [ -z $fail ]; then
+	;;
+	ERROR)
 		exit 1
-	fi
-fi
+	;;
+esac
 
 aws iam attach-role-policy \
 	--role-name $ECS_INSTANCE_ROLE_NAME \
@@ -36,23 +28,22 @@ aws iam attach-role-policy \
 	--role-name $ECS_INSTANCE_ROLE_NAME \
 	--policy-arn arn:aws:iam::$AWS_ACCOUNT_ID:policy/ecrPolicy > /dev/null
 
-err=
-res=$(aws iam create-instance-profile \
-	--instance-profile-name $ECS_INSTANCE_ROLE_NAME 2>&1) || err=t
-
-if ! [ -z $err ]; then
-	fail=
-	if [ -z $(check_aws_error "$res" EntityAlreadyExists) ]; then
-        log "instance profile already exists from previous run!" warning
-	else
-		fail=t
-	fi
-	if ! [ -z $fail ]; then
+cmd="aws iam create-instance-profile --instance-profile-name $ECS_INSTANCE_ROLE_NAME"
+case $(aws_cmd_handler "$cmd" EntityAlreadyExists) in
+	EntityAlreadyExists)
+		log "instance profile already exists from previous run!" warning
+	;;
+	ERROR)
 		exit 1
-	fi
-	exit 0
-fi
+	;;
+esac
 
-aws iam add-role-to-instance-profile \
-	--instance-profile-name $ECS_INSTANCE_ROLE_NAME \
-	--role-name $ECS_INSTANCE_ROLE_NAME > /dev/null
+cmd="aws iam add-role-to-instance-profile --instance-profile-name $ECS_INSTANCE_ROLE_NAME --role-name $ECS_INSTANCE_ROLE_NAME"
+case $(aws_cmd_handler "$cmd" LimitExceeded) in
+	LimitExceeded)
+		true
+	;;
+	ERROR)
+		exit 1
+	;;
+esac
