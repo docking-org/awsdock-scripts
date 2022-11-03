@@ -99,6 +99,8 @@ subnets=$(bash $BINDIR/create-subnets-for-region.bash $aws_region)
 securitygroup=$(printf "$subnets" | tail -n 1)
 subnets=$(printf "$subnets" | head -n -1)
 
+ALLOCATION_STRATEGY=${ALLOCATION_STRATEGY-BEST_FIT_PROGRESSIVE}
+
 if [ -z "$compute_env_arn" ]; then
 
 	# Compute environment
@@ -110,7 +112,8 @@ if [ -z "$compute_env_arn" ]; then
 type=SPOT,\
 minvCpus=0,\
 maxvCpus=$MAX_CPUS,\
-allocationStrategy=SPOT_CAPACITY_OPTIMIZED,\
+tags={\"CEName\":\"${env_suffix}-CE\"},\
+allocationStrategy=$ALLOCATION_STRATEGY,\
 desiredvCpus=0,\
 instanceTypes=optimal,\
 instanceRole=arn:aws:iam::$AWS_ACCOUNT_ID:instance-profile/$ECS_INSTANCE_ROLE_NAME,\

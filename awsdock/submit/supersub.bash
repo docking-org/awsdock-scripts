@@ -125,7 +125,7 @@ if [ "$confirm" = "y" ]; then
             --job-queue $job_queue_name \
             --array-properties size=$s \
             --job-definition $job_def_name \
-            --container-overrides environment="[{name=S3_INPUT_LOCATION,value=$s3_output/input/$(basename $j)},{name=S3_OUTPUT_LOCATION,value=$s3_output/output/$(basename $j)},{name=S3_DOCKFILES_LOCATION,value=$s3_dockfiles},$additional_env{name=SHRTCACHE,value=/dev/shm}]"
+            --container-overrides environment="[{name=S3_INPUT_LOCATION,value=$s3_output/input/$(basename $j)},{name=S3_OUTPUT_LOCATION,value=$s3_output/output/$(basename $j)},{name=S3_DOCKFILES_LOCATION,value=$s3_dockfiles},$additional_env{name=SHRTCACHE,value=/tmp}]"
 
         log "submitted job $(basename $j), size=$s, output=$s3_output/output/$(basename $j), input=$s3_output/input/$(basename $j)" info
     done

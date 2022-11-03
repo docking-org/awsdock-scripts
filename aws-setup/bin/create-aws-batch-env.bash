@@ -104,6 +104,7 @@ export RETRY_STRATEGY
 export MAX_CPUS
 export BID_PERCENTAGE
 export JOB_JSON_CONFIG
+export ALLOCATION_STRATEGY
 log "{4} Finalizing AWS batch components" info
 bash $BINDIR/create-env-batch-components.bash $env_suffix $aws_region $image_name
 
