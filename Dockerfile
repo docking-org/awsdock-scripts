@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 LABEL maintainer="Benjamin Tingle <ben@tingle.org>"
 

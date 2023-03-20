@@ -80,7 +80,19 @@ echo '{"BlockDeviceMappings":[{"DeviceName":"/dev/xvdcz", "Ebs":{"VolumeSize":30
 cmd="aws ec2 create-launch-template --launch-template-name $env_suffix-LT-EBS --launch-template-data file:///tmp/ltdata"
 case $(aws_cmd_handler "$cmd" AlreadyExistsException) in
 	AlreadyExistsException)
-		log "launch template already exists" warning
+		log "launch template already exists- will attempt to replace" warning
+		cmd="aws ec2 delete-launch-template --launch-template-name $env_suffix-LT-EBS"
+		case $(aws_cmd_handler "$cmd") in
+			ERROR)
+				exit 1
+			;;
+		esac
+		cmd="aws ec2 create-launch-template --launch-template-name $env_suffix-LT-EBS --launch-template-data file:///tmp/ltdata"
+		case $(aws_cmd_handler "$cmd") in
+			ERROR)
+				exit 1
+			;;
+		esac
 	;;
 	ERROR)
 		exit 1
