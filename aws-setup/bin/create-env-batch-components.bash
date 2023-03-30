@@ -76,18 +76,20 @@ fi
 # todo: docs...
 [ -z $BID_PERCENTAGE ] && BID_PERCENTAGE=$(circular_numerical_prompt "What is your bid percentage threshold for spot instances? Consult the docs for more info on this parameter. [default: 100]: " 100)
 
-echo '{"BlockDeviceMappings":[{"DeviceName":"/dev/xvdcz", "Ebs":{"VolumeSize":30, "VolumeType":"gp2"}}]}' > /tmp/ltdata
+# /dev/xvda  - root filesystem for container, where e.g files will be downloaded to
+# /dev/xvdcz - image & metadata storage for container
+echo '{"BlockDeviceMappings":[{"DeviceName":"/dev/xvda", "Ebs":{"VolumeSize":30, "VolumeType":"gp2"}}]}' > /tmp/ltdata
 cmd="aws ec2 create-launch-template --launch-template-name $env_suffix-LT-EBS --launch-template-data file:///tmp/ltdata"
 case $(aws_cmd_handler "$cmd" AlreadyExistsException) in
 	AlreadyExistsException)
 		log "launch template already exists- will attempt to replace" warning
-		cmd="aws ec2 delete-launch-template --launch-template-name $env_suffix-LT-EBS"
-		case $(aws_cmd_handler "$cmd") in
-			ERROR)
-				exit 1
-			;;
-		esac
-		cmd="aws ec2 create-launch-template --launch-template-name $env_suffix-LT-EBS --launch-template-data file:///tmp/ltdata"
+		#cmd="aws ec2 delete-launch-template --launch-template-name $env_suffix-LT-EBS"
+		#case $(aws_cmd_handler "$cmd") in
+		#	ERROR)
+		#		exit 1
+		#	;;
+		#esac
+		cmd="aws ec2 create-launch-template-version --launch-template-name $env_suffix-LT-EBS --launch-template-data file:///tmp/ltdata"
 		case $(aws_cmd_handler "$cmd") in
 			ERROR)
 				exit 1
