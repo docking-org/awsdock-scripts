@@ -126,7 +126,7 @@ if [ -z "$compute_env_arn" ]; then
 type=SPOT,\
 minvCpus=0,\
 maxvCpus=$MAX_CPUS,\
-tags={\"CEName\":\"${env_suffix}-CE\"},\
+tags={CEName=${env_suffix}-CE},\
 allocationStrategy=$ALLOCATION_STRATEGY,\
 desiredvCpus=0,\
 instanceTypes=optimal,\
